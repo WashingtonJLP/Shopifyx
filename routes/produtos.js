@@ -2,20 +2,25 @@
 const express = require('express');
 const router = express.Router();
 const Produto = require('../models/produto');
+const auth = require('../middleware/authMiddleware');  // ⬅ middleware de autenticação
 const { upload, cloudinary } = require('../config/upload');
 
-//  Upload da imagem pro Cloudinary
-router.post('/upload', upload.single('imagem'), (req, res) => {
+// ===========================
+// UPLOAD (PRECISA DE TOKEN)
+// ===========================
+router.post('/upload', auth, upload.single('imagem'), (req, res) => {
   try {
-    res.json({ imagem: req.file.path }); 
+    res.json({ imagem: req.file.path });
   } catch (err) {
     console.error('❌ Erro ao enviar imagem:', err);
     res.status(500).json({ erro: 'Erro ao enviar imagem.' });
   }
 });
 
-//  Criar produto
-router.post('/', async (req, res) => {
+// ===========================
+// CRIAR PRODUTO (ADMIN)
+// ===========================
+router.post('/', auth, async (req, res) => {
   try {
     const novoProduto = new Produto(req.body);
     await novoProduto.save();
@@ -25,7 +30,9 @@ router.post('/', async (req, res) => {
   }
 });
 
-//  Listar produtos
+// ===========================
+// LISTAR PRODUTOS (PÚBLICO)
+// ===========================
 router.get('/', async (req, res) => {
   try {
     const produtos = await Produto.find();
@@ -35,7 +42,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-//  Buscar por ID
+// ===========================
+// BUSCAR POR ID (PÚBLICO)
+// ===========================
 router.get('/:id', async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
@@ -46,8 +55,10 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-//  Atualizar produto
-router.put('/:id', async (req, res) => {
+// ===========================
+// ATUALIZAR PRODUTO (ADMIN)
+// ===========================
+router.put('/:id', auth, async (req, res) => {
   try {
     await Produto.findByIdAndUpdate(req.params.id, req.body);
     res.json({ message: 'Produto atualizado com sucesso!' });
@@ -56,16 +67,22 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-//  Deletar produto + imagem do Cloudinary
-router.delete('/:id', async (req, res) => {
+// ===========================
+// DELETAR PRODUTO (ADMIN)
+// ===========================
+router.delete('/:id', auth, async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
+
+    // Apagar imagem do Cloudinary
     if (produto && produto.imagem) {
       const publicId = produto.imagem.split('/').pop().split('.')[0];
       await cloudinary.uploader.destroy(`produtos/${publicId}`);
     }
+
     await Produto.findByIdAndDelete(req.params.id);
     res.json({ message: 'Produto deletado com sucesso!' });
+
   } catch (err) {
     res.status(500).json({ erro: err.message });
   }

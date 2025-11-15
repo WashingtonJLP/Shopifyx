@@ -1,0 +1,78 @@
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #0066ff, #00c9a7);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-wrapper {
+  width: 100%;
+  max-width: 420px;
+  padding: 20px;
+}
+
+.login-card {
+  background: #fff;
+  padding: 40px 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  animation: fadeIn 0.6s ease;
+}
+
+.titulo {
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 5px;
+  color: #0066ff;
+}
+
+.subtitulo {
+  text-align: center;
+  color: #777;
+  margin-bottom: 25px;
+}
+
+.input-group-text {
+  background: #f0f0f0;
+  border: none;
+}
+
+.form-control {
+  border-left: none;
+  border-radius: 0 8px 8px 0 !important;
+}
+
+.input-group {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.botao-login {
+  background: #0066ff;
+  border: none;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: .2s;
+}
+
+.botao-login:hover {
+  background: #004ad1;
+}
+
+.erro {
+  text-align: center;
+  color: #ff2f2f;
+  font-size: 14px;
+}
+
+/* Animação */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-15px); }
+  to { opacity: 1; transform: translateY(0); }
+}

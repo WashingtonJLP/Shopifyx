@@ -5,11 +5,12 @@
   "main": "server.js",
   "license": "ISC",
   "type": "commonjs",
-  "author": "Washington - Matrícula 1482543",
+  "author": "Washington",
   "dependencies": {
     "cloudinary": "^1.41.3",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.3",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0"

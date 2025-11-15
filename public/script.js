@@ -3,59 +3,108 @@ const modalForm = new bootstrap.Modal(document.getElementById('modalForm'));
 const modalDetalhes = new bootstrap.Modal(document.getElementById('modalDetalhes'));
 
 let editandoId = null;
+let paginaAtual = 1;
+const porPagina = 12;
 
-// Carrega produtos do backend 
+
+//  PROTEÇÃO DE LOGIN
+if (!localStorage.getItem("token")) {
+  window.location.href = "/login.html";
+}
+
+
+// API COM TOKEN
+async function api(url, options = {}) {
+  const token = localStorage.getItem("token");
+
+  options.headers = {
+    ...(options.headers || {}),
+    "Authorization": "Bearer " + token
+  };
+
+  if (!(options.body instanceof FormData)) {
+    options.headers["Content-Type"] = "application/json";
+  }
+
+  const res = await fetch(url, options);
+
+  // Token expirado 
+  if (res.status === 401) {
+    alert("Sua sessão expirou. Faça login novamente.");
+    localStorage.removeItem("token");
+    window.location.href = "/login.html";
+    return;
+  }
+
+  return res;
+}
+
+// CARREGAR PRODUTOS
 async function carregarProdutos() {
   try {
-    const res = await fetch('/produtos');
-    if (!res.ok) throw new Error('Erro ao buscar produtos');
-
+    const res = await api('/produtos');
     const produtos = await res.json();
+
     const produtosContainer = document.getElementById('produtosContainer');
     produtosContainer.innerHTML = '';
 
-    produtos.slice(-12).forEach(p => {
+    const inicio = (paginaAtual - 1) * porPagina;
+    const fim = inicio + porPagina;
+
+    produtos.slice(inicio, fim).forEach(p => {
       produtosContainer.innerHTML += `
         <div class="col-md-3 mb-3">
           <div class="card h-100 shadow-sm">
-            <img src="${p.imagem || 'https://via.placeholder.com/300'}" 
+            <img src="${p.imagem || 'https://via.placeholder.com/300'}"
                  class="card-img-top" alt="${p.nome}">
             <div class="card-body">
               <h5 class="card-title">${p.nome}</h5>
 
-              <!-- Código do produto -->
               <p class="text-muted mb-1">
                 <small>Código: ${p.codigo || '—'}</small>
               </p>
 
-              <!-- Descrição resumida -->
               <p class="mb-2">
                 ${p.descricao
-          ? p.descricao.length > 60
-            ? p.descricao.substring(0, 60) + '...'
-            : p.descricao
-          : 'Sem descrição.'}
+                  ? p.descricao.length > 60
+                    ? p.descricao.substring(0, 60) + '...'
+                    : p.descricao
+                  : 'Sem descrição.'}
               </p>
-              <!-- Informações principais -->
+
               <p class="mb-1"><strong>Preço:</strong> R$ ${p.preco ? p.preco.toFixed(2) : '0.00'}</p>
               <p class="mb-1"><strong>Quantidade:</strong> ${p.quantidade ?? '—'}</p>
               <p class="mb-1"><strong>Avaliação:</strong> ⭐ ${p.avaliacao ?? '—'}</p>
               <p class="mb-2"><strong>Categoria:</strong> ${p.categoria || '—'}</p>
-              <button class="btn btn-outline-primary w-100" onclick="verDetalhes('${p._id}')">Detalhes
+
+              <button class="btn btn-outline-primary w-100" onclick="verDetalhes('${p._id}')">
+                Detalhes
               </button>
             </div>
           </div>
         </div>`;
     });
+
+    document.getElementById("paginaAtualTexto").textContent = `Página ${paginaAtual}`;
   } catch (erro) {
-    console.error('Erro ao carregar produtos:', erro);
+    console.error("Erro ao carregar produtos:", erro);
   }
 }
-//  MOSTRAR DETALHES
+
+//NAVEGAÇAO DE PAGINAS
+function proximaPagina() {
+  paginaAtual++;
+  carregarProdutos();
+}
+function paginaAnterior() {
+  if (paginaAtual > 1) paginaAtual--;
+  carregarProdutos();
+}
+
+// DETALHES
 async function verDetalhes(id) {
   try {
-    const res = await fetch(`${API_URL}/${id}`);
-    if (!res.ok) throw new Error('Erro ao carregar detalhes');
+    const res = await api(`${API_URL}/${id}`);
     const produto = await res.json();
 
     document.getElementById('detalheNome').textContent = produto.nome;
@@ -72,7 +121,7 @@ async function verDetalhes(id) {
   }
 }
 
-// NOVO PRODUTO
+//  NOVO PRODUTO
 function novoProduto() {
   document.getElementById('formProduto').reset();
   document.getElementById('modalTitle').textContent = 'Novo Produto';
@@ -80,22 +129,23 @@ function novoProduto() {
   modalForm.show();
 }
 
-// SALVAR PRODUTO (NOVO OU EDIÇÃO)
+//  SALVAR PRODUTO
 document.getElementById('formProduto').addEventListener('submit', async (e) => {
   e.preventDefault();
 
   let imagemUrl = '';
   const imagemInput = document.getElementById('imagem');
 
-  // Se o usuário enviou uma imagem, faz upload pro Cloudinary
   if (imagemInput && imagemInput.files.length > 0) {
     const formData = new FormData();
     formData.append('imagem', imagemInput.files[0]);
 
-    const uploadRes = await fetch(`${API_URL}/upload`, {
+    const uploadRes = await api(`${API_URL}/upload`, {
       method: 'POST',
-      body: formData
+      body: formData,
+      headers: {} 
     });
+
     const uploadData = await uploadRes.json();
     imagemUrl = uploadData.imagem;
   }
@@ -115,13 +165,10 @@ document.getElementById('formProduto').addEventListener('submit', async (e) => {
     const metodo = editandoId ? 'PUT' : 'POST';
     const url = editandoId ? `${API_URL}/${editandoId}` : API_URL;
 
-    const res = await fetch(url, {
+    const res = await api(url, {
       method: metodo,
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(produto)
     });
-
-    if (!res.ok) throw new Error('Erro ao salvar produto');
 
     modalForm.hide();
     carregarProdutos();
@@ -130,7 +177,7 @@ document.getElementById('formProduto').addEventListener('submit', async (e) => {
   }
 });
 
-//  EDITAR PRODUTO
+// EDITAR
 function editarProduto(produto) {
   editandoId = produto._id;
   document.getElementById('modalTitle').textContent = 'Editar Produto';
@@ -141,54 +188,54 @@ function editarProduto(produto) {
   document.getElementById('quantidade').value = produto.quantidade;
   document.getElementById('avaliacao').value = produto.avaliacao;
   document.getElementById('categoria').value = produto.categoria;
-
-  // salva o link atual da imagem para manter caso não envie outra
   document.getElementById('imagem').dataset.atual = produto.imagem;
 
   modalDetalhes.hide();
   modalForm.show();
 }
 
-// ✅ EXCLUIR PRODUTO
+// EXCLUIR
 async function excluirProduto(id) {
-  if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+  if (!confirm("Tem certeza que deseja excluir este produto?")) return;
 
   try {
-    const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error('Erro ao excluir produto');
-    modalDetalhes.hide();
+    const res = await api(`${API_URL}/${id}`, { method: "DELETE" });
     carregarProdutos();
+    modalDetalhes.hide();
   } catch (erro) {
-    console.error('Erro ao excluir produto:', erro);
+    console.error("Erro ao excluir produto:", erro);
   }
 }
 
-// 🔍 BUSCAR PRODUTO
+// BUSCAR PRODUTOS
 async function buscarProduto(event) {
   event.preventDefault();
-  const termo = document.getElementById('campoBusca').value.trim().toLowerCase();
-  const res = await fetch(API_URL);
+  const termo = document.getElementById("campoBusca").value.trim().toLowerCase();
+  const res = await api(API_URL);
   const produtos = await res.json();
 
-  const filtrados = produtos.filter(p => p.nome.toLowerCase().includes(termo));
-  const container = document.getElementById('produtosContainer');
+  const filtrados = produtos.filter(p =>
+    p.nome.toLowerCase().includes(termo)
+  );
+
+  const container = document.getElementById("produtosContainer");
   container.innerHTML = '';
 
   filtrados.forEach(produto => {
-    const card = `
+    container.innerHTML += `
       <div class="col-md-3">
         <div class="card h-100 shadow-sm">
-          <img src="${produto.imagem || 'https://via.placeholder.com/300'}" class="card-img-top" alt="${produto.nome}">
+          <img src="${produto.imagem || 'https://via.placeholder.com/300'}" class="card-img-top">
           <div class="card-body d-flex flex-column">
-            <h5 class="card-title">${produto.nome}</h5>
-            <p class="card-text">R$ ${produto.preco.toFixed(2)}</p>
+            <h5>${produto.nome}</h5>
+            <p>R$ ${produto.preco.toFixed(2)}</p>
             <small class="text-muted">${produto.categoria || ''}</small>
           </div>
         </div>
       </div>`;
-    container.innerHTML += card;
   });
 
+  //  SCROLAR ATÉ OS PRODUTOS 
   if (filtrados.length > 0) {
     setTimeout(() => {
       container.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -196,5 +243,11 @@ async function buscarProduto(event) {
   }
 }
 
-// CHAMAR AO INICIAR
+// LOGOUT
+function logout() {
+  localStorage.removeItem("token");
+  window.location.href = "/login.html";
+}
+
+//  INICIAR
 document.addEventListener('DOMContentLoaded', carregarProdutos);
