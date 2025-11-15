@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000/produtos';
+const API_URL = 'https://shopifyx-isc4.onrender.com/produtos';
 const modalForm = new bootstrap.Modal(document.getElementById('modalForm'));
 const modalDetalhes = new bootstrap.Modal(document.getElementById('modalDetalhes'));
 
