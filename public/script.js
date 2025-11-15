@@ -29,14 +29,23 @@ async function api(url, options = {}) {
   const res = await fetch(url, options);
 
 // TOKEN EXPIRADO
-if (res.status === 401) {
-  alert("Sua sessão expirou. Faça login novamente.");
-  localStorage.removeItem("token");
-  window.location.href = "/login.html";
-  return;
-}
+  if (res.status === 401) {
 
-return res;
+    Swal.fire({
+      icon: "warning",
+      title: "Sessão expirada",
+      text: "Sua sessão expirou. Faça login novamente.",
+      confirmButtonText: "OK",
+      confirmButtonColor: "#3085d6"
+    }).then(() => {
+      localStorage.removeItem("token");
+      window.location.href = "/login.html";
+    });
+
+    return;
+  }
+
+  return res;
 }
 
 // CARREGAR PRODUTOS
