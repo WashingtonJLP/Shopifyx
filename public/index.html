@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <title>SHOPIFYX</title>
@@ -7,20 +8,23 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 </head>
 
 <!--  Header -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
   <div class="container">
-   <a class="navbar-brand fw-bold fs-4" href="/">Shopifyx</a>
+    <a class="navbar-brand fw-bold fs-4" href="/">Shopifyx</a>
 
     <form class="d-flex ms-auto" role="search" onsubmit="buscarProduto(event)">
-      <input id="campoBusca" class="form-control me-2" type="search" placeholder="Buscar produto..." aria-label="Search">
+      <input id="campoBusca" class="form-control me-2" type="search" placeholder="Buscar produto..."
+        aria-label="Search">
       <button class="btn btn-light" type="submit"><i class="bi bi-search"></i></button>
     </form>
-  <button class="btn btn-logout ms-3" onclick="logout()">
-  <i class="bi bi-box-arrow-right"></i> Sair
-</button>
+    <button class="btn btn-logout ms-3" onclick="logout()">
+      <i class="bi bi-box-arrow-right"></i> Sair
+    </button>
 
   </div>
 </nav>
@@ -84,31 +88,65 @@
     <div id="produtosContainer" class="row g-3"></div>
   </div>
 
-<!-- Modal de Cadastro/Edição -->
-<div class="modal fade" id="modalForm" tabindex="-1">
-  <div class="modal-dialog">
-    <form id="formProduto" class="modal-content">
-      <div class="modal-header">
-        <h5 id="modalTitle" class="modal-title">Novo Produto</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="produtoId">
-        <input class="form-control mb-2" id="nome" placeholder="Nome" required>
-        <input class="form-control mb-2" id="codigo" placeholder="Código" required>
-        <input class="form-control mb-2" id="preco" placeholder="Preço" type="number" step="0.01" required>
-        <input class="form-control mb-2" id="quantidade" placeholder="Quantidade" type="number" min="0" required>
-        <input class="form-control mb-2" id="avaliacao" placeholder="Avaliação (0–5)" type="number" step="0.1" min="0" max="5">
-        <input class="form-control mb-2" id="categoria" placeholder="Categoria">
-        <textarea class="form-control mb-2" id="descricao" placeholder="Descrição"></textarea>
-        <input class="form-control mb-2" id="imagem" type="file" accept="image/*">
-      </div>
-      <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">Salvar</button>
-      </div>
-    </form>
-  </div>
+  <!-- Modal de Cadastro/Edição -->
+  <div class="modal fade" id="modalForm" tabindex="-1">
+    <div class="modal-dialog">
+      <form id="formProduto" class="modal-content needs-validation" novalidate>
+        <div class="modal-header">
+          <h5 id="modalTitle" class="modal-title">Novo Produto</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="produtoId">
+          <!-- Nome -->
+          <div class="mb-2">
+            <input class="form-control" id="nome" placeholder="Nome" required>
+            <div class="invalid-feedback">Informe o nome do produto.</div>
+          </div>
+          <!-- Código -->
+          <div class="mb-2">
+            <input class="form-control" id="codigo" placeholder="Código" required>
+            <div class="invalid-feedback">Informe o código.</div>
+          </div>
+          <!-- Preço -->
+          <div class="mb-2">
+            <input class="form-control" id="preco" placeholder="Preço" type="number" step="0.01" required>
+            <div class="invalid-feedback">Informe um preço válido.</div>
+          </div>
+          <!-- Quantidade -->
+          <div class="mb-2">
+            <input class="form-control" id="quantidade" placeholder="Quantidade" type="number" min="0" required>
+            <div class="invalid-feedback">Informe a quantidade.</div>
+          </div>
+          <!-- Avaliação -->
+          <div class="mb-2">
+            <input class="form-control" id="avaliacao" placeholder="Avaliação (0–5)" type="number" step="0.1" min="0"
+              max="5" required>
+            <div class="invalid-feedback">Informe a avaliação (0 a 5).</div>
+          </div>
+          <!-- Categoria -->
+          <div class="mb-2">
+            <input class="form-control" id="categoria" placeholder="Categoria" required>
+            <div class="invalid-feedback">Informe a categoria.</div>
+          </div>
+          <!-- Descrição -->
+          <div class="mb-2">
+            <textarea class="form-control" id="descricao" placeholder="Descrição" required></textarea>
+            <div class="invalid-feedback">Informe a descrição.</div>
+          </div>
+          <!-- Imagem -->
+<div class="mb-2">
+  <input class="form-control" id="imagem" type="file" accept="image/*">
+  <div class="invalid-feedback">Selecione uma imagem.</div>
 </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Salvar</button> 
+        </div>
+
+      </form>
+    </div>
+  </div>
 
   <!-- Modal de Detalhes -->
   <div class="modal fade" id="modalDetalhes" tabindex="-1">
@@ -131,33 +169,34 @@
     </div>
   </div>
 
-<!--  NAVEGAÇAO ENTRE PAGINAS -->
+  <!--  NAVEGAÇAO ENTRE PAGINAS -->
   <div class="d-flex justify-content-center mt-4">
-  <button class="btn btn-primary mx-2" onclick="paginaAnterior()">Anterior</button>
-  <span id="paginaAtualTexto" class="mx-2"></span>
-  <button class="btn btn-primary mx-2" onclick="proximaPagina()">Próxima</button>
-</div>
+    <button class="btn btn-primary mx-2" onclick="paginaAnterior()">Anterior</button>
+    <span id="paginaAtualTexto" class="mx-2"></span>
+    <button class="btn btn-primary mx-2" onclick="proximaPagina()">Próxima</button>
+  </div>
 
-<!--  Footer -->
-<footer class="footer mt-5 py-4" style="
+  <!--  Footer -->
+  <footer class="footer mt-5 py-4" style="
   backdrop-filter: blur(10px);
   background: rgba(255, 255, 255, 0.6);
   border-top: 1px solid rgba(0,0,0,0.1);
 ">
-  <div class="container text-center">
+    <div class="container text-center">
 
-    <p class="fw-bold mb-1" style="font-size: 1.2rem;">Shopifyx</p>
-    <p class="text-muted mb-3">© 2025 — Todos os direitos reservados</p>
-    <div class="d-flex justify-content-center gap-3">
-      <a href="#" class="text-dark"><i class="bi bi-facebook fs-5"></i></a>
-      <a href="#" class="text-dark"><i class="bi bi-instagram fs-5"></i></a>
-      <a href="#" class="text-dark"><i class="bi bi-linkedin fs-5"></i></a>
-      <a href="#" class="text-dark"><i class="bi bi-github fs-5"></i></a>
+      <p class="fw-bold mb-1" style="font-size: 1.2rem;">Shopifyx</p>
+      <p class="text-muted mb-3">© 2025 — Todos os direitos reservados</p>
+      <div class="d-flex justify-content-center gap-3">
+        <a href="#" class="text-dark"><i class="bi bi-facebook fs-5"></i></a>
+        <a href="#" class="text-dark"><i class="bi bi-instagram fs-5"></i></a>
+        <a href="#" class="text-dark"><i class="bi bi-linkedin fs-5"></i></a>
+        <a href="#" class="text-dark"><i class="bi bi-github fs-5"></i></a>
+      </div>
     </div>
-  </div>
-</footer>
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="script.js"></script>
 </body>
+
 </html>

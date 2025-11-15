@@ -2,12 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const Produto = require('../models/produto');
-const auth = require('../middleware/authMiddleware');  // ⬅ middleware de autenticação
+const auth = require('../middleware/authMiddleware'); 
 const { upload, cloudinary } = require('../config/upload');
 
-// ===========================
 // UPLOAD (PRECISA DE TOKEN)
-// ===========================
 router.post('/upload', auth, upload.single('imagem'), (req, res) => {
   try {
     res.json({ imagem: req.file.path });
@@ -17,9 +15,7 @@ router.post('/upload', auth, upload.single('imagem'), (req, res) => {
   }
 });
 
-// ===========================
 // CRIAR PRODUTO (ADMIN)
-// ===========================
 router.post('/', auth, async (req, res) => {
   try {
     const novoProduto = new Produto(req.body);
@@ -30,9 +26,7 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// ===========================
 // LISTAR PRODUTOS (PÚBLICO)
-// ===========================
 router.get('/', async (req, res) => {
   try {
     const produtos = await Produto.find();
@@ -42,9 +36,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ===========================
-// BUSCAR POR ID (PÚBLICO)
-// ===========================
+// BUSCAR POR ID
 router.get('/:id', async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
@@ -55,9 +47,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// ===========================
 // ATUALIZAR PRODUTO (ADMIN)
-// ===========================
 router.put('/:id', auth, async (req, res) => {
   try {
     await Produto.findByIdAndUpdate(req.params.id, req.body);
@@ -67,9 +57,7 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// ===========================
 // DELETAR PRODUTO (ADMIN)
-// ===========================
 router.delete('/:id', auth, async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);

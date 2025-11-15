@@ -28,15 +28,15 @@ async function api(url, options = {}) {
 
   const res = await fetch(url, options);
 
-  // Token expirado 
-  if (res.status === 401) {
-    alert("Sua sessão expirou. Faça login novamente.");
-    localStorage.removeItem("token");
-    window.location.href = "/login.html";
-    return;
-  }
+// TOKEN EXPIRADO
+if (res.status === 401) {
+  alert("Sua sessão expirou. Faça login novamente.");
+  localStorage.removeItem("token");
+  window.location.href = "/login.html";
+  return;
+}
 
-  return res;
+return res;
 }
 
 // CARREGAR PRODUTOS
@@ -66,10 +66,10 @@ async function carregarProdutos() {
 
               <p class="mb-2">
                 ${p.descricao
-                  ? p.descricao.length > 60
-                    ? p.descricao.substring(0, 60) + '...'
-                    : p.descricao
-                  : 'Sem descrição.'}
+          ? p.descricao.length > 60
+            ? p.descricao.substring(0, 60) + '...'
+            : p.descricao
+          : 'Sem descrição.'}
               </p>
 
               <p class="mb-1"><strong>Preço:</strong> R$ ${p.preco ? p.preco.toFixed(2) : '0.00'}</p>
@@ -106,15 +106,12 @@ async function verDetalhes(id) {
   try {
     const res = await api(`${API_URL}/${id}`);
     const produto = await res.json();
-
     document.getElementById('detalheNome').textContent = produto.nome;
     document.getElementById('detalheDescricao').textContent = produto.descricao || 'Sem descrição.';
     document.getElementById('detalhePreco').textContent = produto.preco.toFixed(2);
     document.getElementById('detalheImagem').src = produto.imagem || 'https://via.placeholder.com/400';
-
     document.getElementById('editarBtn').onclick = () => editarProduto(produto);
     document.getElementById('excluirBtn').onclick = () => excluirProduto(produto._id);
-
     modalDetalhes.show();
   } catch (erro) {
     console.error('Erro ao carregar detalhes:', erro);
@@ -123,33 +120,46 @@ async function verDetalhes(id) {
 
 //  NOVO PRODUTO
 function novoProduto() {
-  document.getElementById('formProduto').reset();
-  document.getElementById('modalTitle').textContent = 'Novo Produto';
+  const form = document.getElementById('formProduto');
+  const imagemInput = document.getElementById('imagem');
+  form.reset();
   editandoId = null;
+  document.getElementById('modalTitle').textContent = 'Novo Produto';
+  imagemInput.required = true;
+  imagemInput.value = "";
+  form.classList.remove("was-validated");
   modalForm.show();
 }
 
-//  SALVAR PRODUTO
+//  SALVAR PRODUTO 
 document.getElementById('formProduto').addEventListener('submit', async (e) => {
   e.preventDefault();
-
-  let imagemUrl = '';
+  const form = e.target;
+  if (!form.checkValidity()) {
+    form.classList.add("was-validated");
+    return;
+  }
   const imagemInput = document.getElementById('imagem');
+  let imagemUrl = "";
 
-  if (imagemInput && imagemInput.files.length > 0) {
+  if (!editandoId && imagemInput.files.length === 0) {
+    imagemInput.classList.add("is-invalid");
+    return;
+  }
+  if (imagemInput.files.length > 0) {
     const formData = new FormData();
     formData.append('imagem', imagemInput.files[0]);
 
     const uploadRes = await api(`${API_URL}/upload`, {
       method: 'POST',
       body: formData,
-      headers: {} 
+      headers: {}
     });
-
     const uploadData = await uploadRes.json();
     imagemUrl = uploadData.imagem;
   }
 
+  // Criando objeto do produto
   const produto = {
     nome: document.getElementById('nome').value,
     codigo: document.getElementById('codigo').value,
@@ -160,20 +170,25 @@ document.getElementById('formProduto').addEventListener('submit', async (e) => {
     categoria: document.getElementById('categoria').value,
     imagem: imagemUrl || (editandoId ? document.getElementById('imagem').dataset.atual : '')
   };
-
   try {
-    const metodo = editandoId ? 'PUT' : 'POST';
+    const metodo = editandoId ? "PUT" : "POST";
     const url = editandoId ? `${API_URL}/${editandoId}` : API_URL;
-
-    const res = await api(url, {
+    await api(url, {
       method: metodo,
       body: JSON.stringify(produto)
     });
-
     modalForm.hide();
+    form.classList.remove("was-validated");
+    Swal.fire({
+      icon: "success",
+      title: "Produto salvo com sucesso!",
+      showConfirmButton: false,
+      timer: 1500
+    });
     carregarProdutos();
+
   } catch (erro) {
-    console.error('Erro ao salvar produto:', erro);
+    console.error("Erro ao salvar produto:", erro);
   }
 });
 
@@ -181,6 +196,7 @@ document.getElementById('formProduto').addEventListener('submit', async (e) => {
 function editarProduto(produto) {
   editandoId = produto._id;
   document.getElementById('modalTitle').textContent = 'Editar Produto';
+
   document.getElementById('nome').value = produto.nome;
   document.getElementById('codigo').value = produto.codigo;
   document.getElementById('preco').value = produto.preco;
@@ -188,7 +204,10 @@ function editarProduto(produto) {
   document.getElementById('quantidade').value = produto.quantidade;
   document.getElementById('avaliacao').value = produto.avaliacao;
   document.getElementById('categoria').value = produto.categoria;
-  document.getElementById('imagem').dataset.atual = produto.imagem;
+  const imagemInput = document.getElementById("imagem");
+  imagemInput.required = false;
+  imagemInput.value = "";
+  imagemInput.dataset.atual = produto.imagem;
 
   modalDetalhes.hide();
   modalForm.show();
@@ -196,21 +215,48 @@ function editarProduto(produto) {
 
 // EXCLUIR
 async function excluirProduto(id) {
-  if (!confirm("Tem certeza que deseja excluir este produto?")) return;
+  Swal.fire({
+    title: "Tem certeza?",
+    text: "Esta ação não pode ser desfeita!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Sim, excluir",
+    cancelButtonText: "Cancelar"
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+        await api(`${API_URL}/${id}`, { method: "DELETE" });
 
-  try {
-    const res = await api(`${API_URL}/${id}`, { method: "DELETE" });
-    carregarProdutos();
-    modalDetalhes.hide();
-  } catch (erro) {
-    console.error("Erro ao excluir produto:", erro);
-  }
+        Swal.fire({
+          icon: "success",
+          title: "Produto excluído!",
+          showConfirmButton: false,
+          timer: 1500
+        });
+
+        modalDetalhes.hide();
+        carregarProdutos();
+
+      } catch (erro) {
+        console.error("Erro ao excluir produto:", erro);
+        Swal.fire({
+          icon: "error",
+          title: "Erro ao excluir",
+          text: "Tente novamente.",
+        });
+      }
+    }
+  });
 }
 
-// BUSCAR PRODUTOS
+
+// BUSCAR PRODUTOS 
 async function buscarProduto(event) {
   event.preventDefault();
   const termo = document.getElementById("campoBusca").value.trim().toLowerCase();
+
   const res = await api(API_URL);
   const produtos = await res.json();
 
@@ -221,21 +267,41 @@ async function buscarProduto(event) {
   const container = document.getElementById("produtosContainer");
   container.innerHTML = '';
 
-  filtrados.forEach(produto => {
+  filtrados.forEach(p => {
     container.innerHTML += `
-      <div class="col-md-3">
+      <div class="col-md-3 mb-3">
         <div class="card h-100 shadow-sm">
-          <img src="${produto.imagem || 'https://via.placeholder.com/300'}" class="card-img-top">
-          <div class="card-body d-flex flex-column">
-            <h5>${produto.nome}</h5>
-            <p>R$ ${produto.preco.toFixed(2)}</p>
-            <small class="text-muted">${produto.categoria || ''}</small>
+          <img src="${p.imagem || 'https://via.placeholder.com/300'}"
+               class="card-img-top" alt="${p.nome}">
+          <div class="card-body">
+            <h5 class="card-title">${p.nome}</h5>
+
+            <p class="text-muted mb-1">
+              <small>Código: ${p.codigo || '—'}</small>
+            </p>
+
+            <p class="mb-2">
+              ${p.descricao
+                ? p.descricao.length > 60
+                  ? p.descricao.substring(0, 60) + '...'
+                  : p.descricao
+                : 'Sem descrição.'}
+            </p>
+
+            <p class="mb-1"><strong>Preço:</strong> R$ ${p.preco ? p.preco.toFixed(2) : '0.00'}</p>
+            <p class="mb-1"><strong>Quantidade:</strong> ${p.quantidade ?? '—'}</p>
+            <p class="mb-1"><strong>Avaliação:</strong> ⭐ ${p.avaliacao ?? '—'}</p>
+            <p class="mb-2"><strong>Categoria:</strong> ${p.categoria || '—'}</p>
+
+            <button class="btn btn-outline-primary w-100" onclick="verDetalhes('${p._id}')">
+              Detalhes
+            </button>
           </div>
         </div>
       </div>`;
   });
 
-  //  SCROLAR ATÉ OS PRODUTOS 
+  // SCROLL AUTOMÁTICO PARA RESULTADOS
   if (filtrados.length > 0) {
     setTimeout(() => {
       container.scrollIntoView({ behavior: 'smooth', block: 'start' });
