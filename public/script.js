@@ -260,9 +260,20 @@ async function buscarProduto(event) {
   const res = await api(API_URL);
   const produtos = await res.json();
 
-  const filtrados = produtos.filter(p =>
-    p.nome.toLowerCase().includes(termo)
+const filtrados = produtos.filter(p => {
+  const nome = p.nome?.toLowerCase() || "";
+  const codigo = p.codigo?.toLowerCase() || "";
+  const categoria = p.categoria?.toLowerCase() || "";
+  const descricao = p.descricao?.toLowerCase() || "";
+
+  return (
+    nome.includes(termo) ||
+    codigo.includes(termo) ||
+    categoria.includes(termo) ||
+    descricao.includes(termo)
   );
+});
+
 
   const container = document.getElementById("produtosContainer");
   container.innerHTML = '';
